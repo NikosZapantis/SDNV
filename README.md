@@ -16,10 +16,10 @@ The goal is one dashboard with a real OpenStreetMap map. Vehicles drive on real 
 | Network model for simulation mode (`sdnv/netmodel.py`) | done |
 | Real-time runner and orchestrator↔dashboard link (`sdnv/runner.py`, `sdnv/hub.py`) | done |
 | Headless baseline-vs-SDNV sweep (`sdnv/batch.py`) | done |
+| Dashboard: Leaflet map, KPIs, latency chart, controls, config panel (`dashboard/`) | done (sim; emu relay ready) |
+| `run.sh` (`sim \| stop \| batch`) / `install.sh` (dashboard venv) | done |
 | Ryu controller, vehicle `tc` policy script, in-vehicle MQTT agent | next |
-| Emulation orchestrator (Mininet-WiFi driven by the world engine) | next |
-| Dashboard (Leaflet map, KPIs, charts, controls) | next |
-| `run.sh` / `install.sh` automation | next |
+| Emulation orchestrator (Mininet-WiFi driven by the world engine), `run.sh emu` | next |
 
 ## How it fits together
 
@@ -52,11 +52,16 @@ The same world engine drives both modes, so the map behaves the same way in each
 
 ## What runs today
 
-Pure Python 3.8+ standard library. No root, no extra packages.
+The `sdnv/` core is pure Python 3.8+ standard library (no root). The dashboard needs Flask + Flask-SocketIO in a venv (`SDNV_VENV`, default `~/sdv-venv`).
 
 ```bash
+# Live dashboard in simulation mode (background) → prints the URL, logs in logs/dashboard.log
+./install.sh
+./run.sh sim                      # extra flags pass through: --vehicles 40 --rsus 12 --speed 2 --scenario baseline
+./run.sh stop
+
 # Baseline vs SDNV sweep (simulation, ≈300× real time) → results/batch_<ts>_{runs,summary}.csv
-python3 -m sdnv.batch --vehicles 10,20,30 --runs 5 --duration 900
+./run.sh batch --vehicles 10,20,30 --runs 5 --duration 900
 
 # Build a map for another area from OpenStreetMap (bbox = S,W,N,E)
 python3 tools/fetch_map.py --bbox 37.9705,23.7220,37.9875,23.7520 \
@@ -65,6 +70,8 @@ python3 tools/fetch_map.py --bbox 37.9705,23.7220,37.9875,23.7520 \
 
 The bundled map covers about 2.6 × 1.9 km with 313 junctions, 38 km of directed roads and 5 hospitals. With the defaults it gets 10 RSUs at 400 m range (about 91% road coverage) and 35 signals.
 
+The dashboard listens on `SDNV_DASH_PORT` (7000) and moves to the next free port if it's taken. On macOS the AirPlay Receiver holds 7000, so it usually ends up on 7001. In the browser you can switch Baseline/SDNV live, dispatch or recall EVs, add vehicles, change the sim speed, click a vehicle to follow it, and restart with a new fleet/RSU layout from **Config**. `--mode emu` attaches the same page to a running orchestrator through `sdnv/hub.py`.
+
 Parameters are environment variables with defaults in `sdnv/config.py` (for example `SDNV_NUM_VEHICLES`, `SDNV_NUM_RSUS`, `SDNV_RSU_RANGE`, `SDNV_SCENARIO`, `EMERGENCY_RATE`, `SDNV_BG_MBIT`, `SDNV_HELPER_TCP_LIMIT_TOTAL_MBIT`). They mirror `params_scale_v6.env` from sdnv-mininet-project.
 
 ## Next steps
@@ -72,9 +79,8 @@ Parameters are environment variables with defaults in `sdnv/config.py` (for exam
 1. `controller/sdnv_controller.py`: install the priority-port rules proactively. In sdnv-mininet-project they're installed in `packet_in`, but IPv4 already matches the priority-1 NORMAL rule, so those packets never reach the controller. Also: per-EV ECM rules with OVS queue tagging, flow statistics, and the REST API from the MQTT project.
 2. `vehicle/policy.sh`: the baseline, background, SDNV emergency and helper profiles as one atomic `tc -batch` per change.
 3. `vehicle/sdv_agent.py`: MQTT telemetry, RTT probes on the HP (5003) and BE (5004) ports, and an EMAPT burst on UDP/6000.
-4. `emulator/`: the orchestrator plus the Mininet-WiFi backend (positions, handover, policies, iperf measurements).
-5. `dashboard/`: Leaflet map with live vehicles, RSU coverage, signals, flows and EV routes, plus KPI tiles, charts and controls.
-6. `run.sh` (`sim | emu | stop | batch`) and `install.sh`.
+4. `emulator/`: the orchestrator plus the Mininet-WiFi backend (positions, handover, policies, iperf measurements), feeding the dashboard over `sdnv/hub.py`.
+5. `run.sh emu` and the Linux emulation prerequisites in `install.sh` (Mininet-WiFi, Open vSwitch, Ryu, mosquitto).
 
 ## Map data
 
