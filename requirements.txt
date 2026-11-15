@@ -1,0 +1,4 @@
+# dashboard (venv Python); the sdnv/ core is standard library only
+flask>=3.0
+flask-socketio>=5.3
+simple-websocket>=1.0
