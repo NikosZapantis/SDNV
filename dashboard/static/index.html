@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SDNV Live Testbed</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <strong>SDNV</strong><span class="muted" id="mapName">connecting…</span>
+    </div>
+    <span class="badge" id="modeBadge">—</span>
+    <span class="clock" id="clock" title="Simulation time">00:00</span>
+
+    <div class="seg" id="scenarioSeg" role="group" aria-label="Scenario">
+      <button data-scenario="baseline">Baseline</button>
+      <button data-scenario="sdnv">SDNV</button>
+    </div>
+
+    <div class="group sim-only">
+      <button id="pauseBtn" title="Pause / resume">Pause</button>
+      <label class="inline">Speed
+        <select id="speedSel">
+          <option value="0.25">¼×</option><option value="0.5">½×</option><option value="1">1×</option>
+          <option value="2">2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option>
+        </select>
+      </label>
+    </div>
+
+    <button class="primary" id="dispatchBtn" title="Dispatch the next idle emergency vehicle">Dispatch EV</button>
+
+    <div class="group dyn-only">
+      <span class="muted">Add</span>
+      <button data-add="car">Car</button>
+      <button data-add="ambulance">Ambulance</button>
+      <button data-add="police">Police</button>
+    </div>
+
+    <button class="sim-only" id="cfgBtn">Config</button>
+  </header>
+
+  <main class="layout">
+    <section class="mapwrap">
+      <div id="map"></div>
+      <div class="legend" aria-label="Map legend">
+        <span><i class="dot k0"></i>Car</span>
+        <span><i class="dot k1"></i>Ambulance</span>
+        <span><i class="dot k2"></i>Police</span>
+        <span><i class="ring siren"></i>Siren on</span>
+        <span><i class="ring yield"></i>Yielding</span>
+        <span><i class="cell"></i>RSU cell</span>
+        <span><i class="cell ecm"></i>ECM cell</span>
+        <span><i class="sig g"></i>Pre-empted green</span>
+      </div>
+      <div class="link" id="linkBanner" hidden></div>
+    </section>
+
+    <aside class="side">
+      <div class="kpis" id="kpis"></div>
+      <p class="note" id="kpiNote"></p>
+
+      <div class="card">
+        <div class="card-h">
+          <h2>Latency</h2>
+          <div class="chart-legend">
+            <span><i class="sw s1"></i>Emergency (HP)</span>
+            <span><i class="sw s2"></i>Civilian (BE)</span>
+          </div>
+        </div>
+        <div class="chart" id="latChart"></div>
+      </div>
+
+      <div class="counters" id="counters"></div>
+
+      <div class="card" id="selCard" hidden></div>
+
+      <nav class="tabs" role="tablist">
+        <button data-tab="vehicles" class="on">Vehicles</button>
+        <button data-tab="rsus">RSUs</button>
+        <button data-tab="missions">Missions</button>
+        <button data-tab="events">Events</button>
+        <button data-tab="controller">Controller</button>
+      </nav>
+      <div class="tabpane" id="tab-vehicles"></div>
+      <div class="tabpane" id="tab-rsus" hidden></div>
+      <div class="tabpane" id="tab-missions" hidden></div>
+      <div class="tabpane" id="tab-events" hidden><ul class="log" id="log"></ul></div>
+      <div class="tabpane" id="tab-controller" hidden></div>
+    </aside>
+  </main>
+
+  <dialog id="cfgDlg">
+    <form method="dialog" id="cfgForm">
+      <h2>Restart simulation</h2>
+      <div class="grid2">
+        <label>Vehicles <input name="vehicles" type="number" min="1" max="200"></label>
+        <label>Emergency vehicles <input name="emergency" type="number" min="0" max="20"></label>
+        <label>RSUs <input name="rsus" type="number" min="1" max="40"></label>
+        <label>RSU range (m) <input name="rsu_range" type="number" min="50" max="1500" step="10"></label>
+        <label>Auto-dispatch (s, 0 = off) <input name="auto_dispatch" type="number" min="0" max="3600"></label>
+        <label>Seed <input name="seed" type="number" min="0"></label>
+        <label>Scenario
+          <select name="scenario"><option value="sdnv">SDNV</option><option value="baseline">Baseline</option></select>
+        </label>
+        <label>Signals
+          <select name="signals"><option value="major">RSU + major junctions</option><option value="rsu">RSU junctions only</option></select>
+        </label>
+      </div>
+      <div class="actions">
+        <button value="cancel">Cancel</button>
+        <button value="ok" class="primary">Restart</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
